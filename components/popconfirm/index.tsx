@@ -1,113 +1,141 @@
-import React from 'react';
-import Tooltip, { AbstractTooltipProps }  from '../tooltip';
-import Icon from '../icon';
+import * as React from 'react';
+import ExclamationCircleFilled from '@ant-design/icons/ExclamationCircleFilled';
+import Tooltip, { AbstractTooltipProps } from '../tooltip';
 import Button from '../button';
-import injectLocale from '../locale-provider/injectLocale';
+import { LegacyButtonType, NativeButtonProps, convertLegacyProps } from '../button/button';
+import LocaleReceiver from '../locale-provider/LocaleReceiver';
+import defaultLocale from '../locale/default';
+import { ConfigContext } from '../config-provider';
+import { getRenderPropValue, RenderFunction } from '../_util/getRenderPropValue';
 
 export interface PopconfirmProps extends AbstractTooltipProps {
-  title: React.ReactNode;
-  onConfirm?: (e: React.MouseEvent<any>) => void;
-  onCancel?: (e: React.MouseEvent<any>) => void;
+  title: React.ReactNode | RenderFunction;
+  disabled?: boolean;
+  onConfirm?: (e?: React.MouseEvent<HTMLElement>) => void;
+  onCancel?: (e?: React.MouseEvent<HTMLElement>) => void;
   okText?: React.ReactNode;
+  okType?: LegacyButtonType;
   cancelText?: React.ReactNode;
+  okButtonProps?: NativeButtonProps;
+  cancelButtonProps?: NativeButtonProps;
+  icon?: React.ReactNode;
+  onVisibleChange?: (visible: boolean, e?: React.MouseEvent<HTMLElement>) => void;
 }
 
-abstract class Popconfirm extends React.Component<PopconfirmProps, any> {
-  static defaultProps = {
-    prefixCls: 'ant-popover',
-    transitionName: 'zoom-big',
-    placement: 'top',
-    trigger: 'click',
+export interface PopconfirmState {
+  visible?: boolean;
+}
+
+export interface PopconfirmLocale {
+  okText: string;
+  cancelText: string;
+}
+
+const Popconfirm = React.forwardRef<unknown, PopconfirmProps>((props, ref) => {
+  const [visible, setVisible] = React.useState(props.visible);
+
+  React.useEffect(() => {
+    if ('visible' in props) {
+      setVisible(props.visible);
+    }
+  }, [props.visible]);
+
+  React.useEffect(() => {
+    if ('defaultVisible' in props) {
+      setVisible(props.defaultVisible);
+    }
+  }, [props.defaultVisible]);
+
+  const settingVisible = (value: boolean, e?: React.MouseEvent<HTMLButtonElement>) => {
+    if (!('visible' in props)) {
+      setVisible(value);
+    }
+
+    if (props.onVisibleChange) {
+      props.onVisibleChange(value, e);
+    }
   };
 
-  constructor(props: PopconfirmProps) {
-    super(props);
+  const onConfirm = (e: React.MouseEvent<HTMLButtonElement>) => {
+    settingVisible(false, e);
 
-    this.state = {
-      visible: props.visible,
-    };
-  }
-
-  abstract getLocale()
-
-  componentWillReceiveProps(nextProps: PopconfirmProps) {
-    if ('visible' in nextProps) {
-      this.setState({ visible: nextProps.visible });
+    if (props.onConfirm) {
+      props.onConfirm.call(this, e);
     }
-  }
+  };
 
-  onConfirm = (e) => {
-    this.setVisible(false);
+  const onCancel = (e: React.MouseEvent<HTMLButtonElement>) => {
+    settingVisible(false, e);
 
-    const { onConfirm } = this.props;
-    if (onConfirm) {
-      onConfirm.call(this, e);
+    if (props.onCancel) {
+      props.onCancel.call(this, e);
     }
-  }
+  };
 
-  onCancel = (e) => {
-    this.setVisible(false);
-
-    const { onCancel } = this.props;
-    if (onCancel) {
-      onCancel.call(this, e);
+  const onVisibleChange = (value: boolean) => {
+    const { disabled } = props;
+    if (disabled) {
+      return;
     }
-  }
+    settingVisible(value);
+  };
 
-  onVisibleChange = (visible) => {
-    this.setVisible(visible);
-  }
-
-  setVisible(visible) {
-    const props = this.props;
-    if (!('visible' in props)) {
-      this.setState({ visible });
-    }
-
-    const { onVisibleChange } = props;
-    if (onVisibleChange) {
-      onVisibleChange(visible);
-    }
-  }
-
-  render() {
-    const { prefixCls, title, placement, okText, cancelText, ...restProps } = this.props;
-    const popconfirmLocale = this.getLocale();
-
-    const overlay = (
-      <div>
-        <div className={`${prefixCls}-inner-content`}>
-          <div className={`${prefixCls}-message`}>
-            <Icon type="exclamation-circle" />
-            <div className={`${prefixCls}-message-title`}>{title}</div>
-          </div>
-          <div className={`${prefixCls}-buttons`}>
-            <Button onClick={this.onCancel} size="small">
-              {cancelText || popconfirmLocale.cancelText}
-            </Button>
-            <Button onClick={this.onConfirm} type="primary" size="small">
-              {okText || popconfirmLocale.okText}
-            </Button>
-          </div>
+  const renderOverlay = (prefixCls: string, popconfirmLocale: PopconfirmLocale) => {
+    const { okButtonProps, cancelButtonProps, title, cancelText, okText, okType, icon } = props;
+    return (
+      <div className={`${prefixCls}-inner-content`}>
+        <div className={`${prefixCls}-message`}>
+          {icon}
+          <div className={`${prefixCls}-message-title`}>{getRenderPropValue(title)}</div>
+        </div>
+        <div className={`${prefixCls}-buttons`}>
+          <Button onClick={onCancel} size="small" {...cancelButtonProps}>
+            {cancelText || popconfirmLocale.cancelText}
+          </Button>
+          <Button
+            onClick={onConfirm}
+            {...convertLegacyProps(okType)}
+            size="small"
+            {...okButtonProps}
+          >
+            {okText || popconfirmLocale.okText}
+          </Button>
         </div>
       </div>
     );
+  };
 
-    return (
-      <Tooltip
-        {...restProps}
-        prefixCls={prefixCls}
-        placement={placement}
-        onVisibleChange={this.onVisibleChange}
-        visible={this.state.visible}
-        overlay={overlay}
-      />
-    );
-  }
-}
+  const { getPrefixCls } = React.useContext(ConfigContext);
 
-const injectPopconfirmLocale = injectLocale('Popconfirm', {
-  cancelText: '取消',
-  okText: '确定',
+  const { prefixCls: customizePrefixCls, placement, ...restProps } = props;
+  const prefixCls = getPrefixCls('popover', customizePrefixCls);
+
+  const overlay = (
+    <LocaleReceiver componentName="Popconfirm" defaultLocale={defaultLocale.Popconfirm}>
+      {(popconfirmLocale: PopconfirmLocale) => renderOverlay(prefixCls, popconfirmLocale)}
+    </LocaleReceiver>
+  );
+
+  return (
+    <Tooltip
+      {...restProps}
+      prefixCls={prefixCls}
+      placement={placement}
+      onVisibleChange={onVisibleChange}
+      visible={visible}
+      overlay={overlay}
+      ref={ref as any}
+    />
+  );
 });
-export default injectPopconfirmLocale<PopconfirmProps>(Popconfirm as any);
+
+Popconfirm.defaultProps = {
+  transitionName: 'zoom-big',
+  placement: 'top' as PopconfirmProps['placement'],
+  trigger: 'click' as PopconfirmProps['trigger'],
+  okType: 'primary' as PopconfirmProps['okType'],
+  icon: <ExclamationCircleFilled />,
+  disabled: false,
+};
+
+export default Popconfirm;

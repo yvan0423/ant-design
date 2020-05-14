@@ -1,10 +1,17 @@
-import React, { PropTypes } from 'react';
+import * as React from 'react';
 import classNames from 'classnames';
-import shallowEqual from 'shallowequal';
 import Radio from './radio';
-import { AbstractCheckboxGroupProps } from '../checkbox/Group';
+import {
+  RadioGroupProps,
+  RadioGroupState,
+  RadioChangeEvent,
+  RadioGroupButtonStyle,
+} from './interface';
+import { ConfigConsumer, ConfigConsumerProps } from '../config-provider';
+import SizeContext from '../config-provider/SizeContext';
+import { RadioGroupContextProvider } from './context';
 
-function getCheckedValue(children) {
+function getCheckedValue(children: React.ReactNode) {
   let value = null;
   let matched = false;
   React.Children.forEach(children, (radio: any) => {
@@ -16,30 +23,34 @@ function getCheckedValue(children) {
   return matched ? { value } : undefined;
 }
 
-export interface RadioGroupProps extends AbstractCheckboxGroupProps {
-  defaultValue?: string | number;
-  value?: string | number;
-  onChange?: React.FormEventHandler<any>;
-  size?: 'large' | 'default' | 'small';
-  onMouseEnter?: React.FormEventHandler<any>;
-  onMouseLeave?: React.FormEventHandler<any>;
-}
-
-export default class RadioGroup extends React.Component<RadioGroupProps, any> {
+class RadioGroup extends React.PureComponent<RadioGroupProps, RadioGroupState> {
   static defaultProps = {
-    disabled: false,
+    buttonStyle: 'outline' as RadioGroupButtonStyle,
   };
 
-  static childContextTypes = {
-    radioGroup: PropTypes.any,
-  };
+  static getDerivedStateFromProps(nextProps: RadioGroupProps, prevState: RadioGroupState) {
+    const newState: Partial<RadioGroupState> = {
+      prevPropValue: nextProps.value,
+    };
 
-  constructor(props) {
+    if (nextProps.value !== undefined || prevState.prevPropValue !== nextProps.value) {
+      newState.value = nextProps.value;
+    } else {
+      const checkedValue = getCheckedValue(nextProps.children);
+      if (checkedValue) {
+        newState.value = checkedValue.value;
+      }
+    }
+
+    return newState;
+  }
+
+  constructor(props: RadioGroupProps) {
     super(props);
     let value;
-    if ('value' in props) {
+    if (props.value !== undefined) {
       value = props.value;
-    } else if ('defaultValue' in props) {
+    } else if (props.defaultValue !== undefined) {
       value = props.defaultValue;
     } else {
       const checkedValue = getCheckedValue(props.children);
@@ -47,40 +58,11 @@ export default class RadioGroup extends React.Component<RadioGroupProps, any> {
     }
     this.state = {
       value,
+      prevPropValue: props.value,
     };
   }
 
-  getChildContext() {
-    return {
-      radioGroup: {
-        onChange: this.onRadioChange,
-        value: this.state.value,
-        disabled: this.props.disabled,
-      },
-    };
-  }
-
-  componentWillReceiveProps(nextProps) {
-    if ('value' in nextProps) {
-      this.setState({
-        value: nextProps.value,
-      });
-    } else {
-      const checkedValue = getCheckedValue(nextProps.children);
-      if (checkedValue) {
-        this.setState({
-          value: checkedValue.value,
-        });
-      }
-    }
-  }
-
-  shouldComponentUpdate(nextProps, nextState) {
-    return !shallowEqual(this.props, nextProps) ||
-      !shallowEqual(this.state, nextState);
-  }
-
-  onRadioChange = (ev) => {
+  onRadioChange = (ev: RadioChangeEvent) => {
     const lastValue = this.state.value;
     const { value } = ev.target;
     if (!('value' in this.props)) {
@@ -89,60 +71,102 @@ export default class RadioGroup extends React.Component<RadioGroupProps, any> {
       });
     }
 
-    const onChange = this.props.onChange;
+    const { onChange } = this.props;
     if (onChange && value !== lastValue) {
       onChange(ev);
     }
-  }
-  render() {
-    const props = this.props;
-    const { prefixCls = 'ant-radio-group', className = '' } = props;
-    const classString = classNames(prefixCls, {
-      [`${prefixCls}-${props.size}`]: props.size,
-    }, className);
+  };
 
-    let children: React.ReactChildren[] | React.ReactElement<any>[] | React.ReactNode = props.children;
+  renderGroup = ({ getPrefixCls, direction }: ConfigConsumerProps) => {
+    const { props } = this;
+    const {
+      prefixCls: customizePrefixCls,
+      className = '',
+      options,
+      buttonStyle,
+      size: customizeSize,
+    } = props;
+    const prefixCls = getPrefixCls('radio', customizePrefixCls);
+    const groupPrefixCls = `${prefixCls}-group`;
+    let { children } = props;
 
     // 如果存在 options, 优先使用
-    if (props.options && props.options.length > 0) {
-      children = props.options.map((option, index) => {
-        if (typeof option === 'string') { // 此处类型自动推导为 string
+    if (options && options.length > 0) {
+      children = options.map(option => {
+        if (typeof option === 'string') {
+          // 此处类型自动推导为 string
           return (
             <Radio
-              key={index}
+              key={option}
+              prefixCls={prefixCls}
               disabled={this.props.disabled}
               value={option}
-              onChange={this.onRadioChange}
               checked={this.state.value === option}
             >
               {option}
             </Radio>
           );
-        } else { // 此处类型自动推导为 { label: string value: string }
-          return (
-            <Radio
-              key={index}
-              disabled={option.disabled || this.props.disabled}
-              value={option.value}
-              onChange={this.onRadioChange}
-              checked={this.state.value === option.value}
-            >
-              {option.label}
-            </Radio>
-          );
         }
+        // 此处类型自动推导为 { label: string value: string }
+        return (
+          <Radio
+            key={`radio-group-value-options-${option.value}`}
+            prefixCls={prefixCls}
+            disabled={option.disabled || this.props.disabled}
+            value={option.value}
+            checked={this.state.value === option.value}
+            style={option.style}
+          >
+            {option.label}
+          </Radio>
+        );
       });
     }
 
     return (
-      <div
-        className={classString}
-        style={props.style}
-        onMouseEnter={props.onMouseEnter}
-        onMouseLeave={props.onMouseLeave}
+      <SizeContext.Consumer>
+        {size => {
+          const mergedSize = customizeSize || size;
+          const classString = classNames(
+            groupPrefixCls,
+            `${groupPrefixCls}-${buttonStyle}`,
+            {
+              [`${groupPrefixCls}-${mergedSize}`]: mergedSize,
+              [`${groupPrefixCls}-rtl`]: direction === 'rtl',
+            },
+            className,
+          );
+
+          return (
+            <div
+              className={classString}
+              style={props.style}
+              onMouseEnter={props.onMouseEnter}
+              onMouseLeave={props.onMouseLeave}
+              id={props.id}
+            >
+              {children}
+            </div>
+          );
+        }}
+      </SizeContext.Consumer>
+    );
+  };
+
+  render() {
+    return (
+      <RadioGroupContextProvider
+        value={{
+          onChange: this.onRadioChange,
+          value: this.state.value,
+          disabled: this.props.disabled,
+          name: this.props.name,
+        }}
       >
-        {children}
-      </div>
+        <ConfigConsumer>{this.renderGroup}</ConfigConsumer>
+      </RadioGroupContextProvider>
     );
   }
 }
+
+export default RadioGroup;

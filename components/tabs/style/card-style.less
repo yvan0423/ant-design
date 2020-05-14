@@ -1,142 +1,181 @@
-@import "../../style/themes/default";
-@import "../../style/mixins/index";
-@tab-prefix-cls: ~"@{ant-prefix}-tabs";
+@import '../../style/themes/index';
+@import '../../style/mixins/index';
+
+@tab-prefix-cls: ~'@{ant-prefix}-tabs';
 
 // card style
 .@{tab-prefix-cls} {
-  &&-card > &-bar &-nav-container {
-    height: 32px;
-  }
-  &&-card > &-bar &-ink-bar {
+  &&-card &-card-bar &-ink-bar {
     visibility: hidden;
   }
-  &&-card > &-bar &-tab {
+  &&-card &-card-bar &-tab {
     margin: 0;
-    border: @border-width-base @border-style-base @border-color-base;
-    border-bottom: 0;
+    margin-right: @tabs-card-gutter;
+    padding: @tabs-card-horizontal-padding;
+    line-height: 22px;
+    background: @tabs-card-head-background;
+    border: @border-width-base @border-style-base @border-color-split;
     border-radius: @border-radius-base @border-radius-base 0 0;
     transition: all 0.3s @ease-in-out;
-    background: #f9f9f9;
-    margin-right: 2px;
   }
-  &&-card > &-bar &-tab {
-    padding: 5px 16px 4px;
-    transition: all 0.3s @ease-in-out;
-  }
-  &&-card > &-bar &-tab-active {
+  &&-card &-card-bar &-tab-active {
+    color: @tabs-card-active-color;
     background: @component-background;
-    transform: translateZ(0);
-    border-color: @border-color-base;
-    color: @primary-color;
-    padding-bottom: 5px;
+    border-color: @border-color-split;
+    border-bottom: @border-width-base solid @component-background;
+
+    &::before {
+      border-top: @tabs-card-tab-active-border-top;
+    }
   }
-  &&-card > &-bar &-tab-inactive {
+  &&-small &-card-bar &-tab {
+    padding: @tabs-card-horizontal-padding-sm;
+  }
+  &&-card &-card-bar &-tab-disabled {
+    color: @disabled-color;
+  }
+  &&-card &-card-bar &-tab-inactive {
     padding: 0;
   }
-  &&-card > &-bar &-nav-wrap {
+  &&-card &-card-bar &-nav-wrap {
     margin-bottom: 0;
   }
-  &&-card > &-bar &-tab .@{iconfont-css-prefix}-close {
-    margin-right: 0;
-    color: @text-color-secondary;
-    transition: all 0.3s @ease-in-out;
-    .iconfont-size-under-12px(9px);
-    transform-origin: 100% 50%;
-    width: 0;
-    text-align: right;
-    vertical-align: middle;
+  &&-card &-card-bar &-tab &-close-x {
+    width: 16px;
+    height: @font-size-base;
+    margin-right: -5px;
+    margin-left: 3px;
     overflow: hidden;
+    color: @text-color-secondary;
+    font-size: @font-size-sm;
+    vertical-align: middle;
+    transition: all 0.3s;
     &:hover {
-      color: #404040;
-      font-weight: bold;
+      color: @heading-color;
     }
   }
 
-  &&-card &-content > &-tabpane,
-  &&-editable-card &-content > &-tabpane {
-    transition: none!important;
+  &&-card &-card-content > &-tabpane,
+  &&-editable-card &-card-content > &-tabpane {
+    transition: none !important;
+    &-inactive {
+      overflow: hidden;
+    }
   }
 
-  &&-editable-card > &-bar &-tab > div {
-    transition: all 0.3s @ease-in-out;
-  }
-  &&-editable-card > &-bar &-tab:not(&-tab-active):hover > div:not(&-tab-unclosable) {
-    margin-left: -8px;
-    margin-right: -8px;
-  }
-
-  &&-card > &-bar &-tab-active .@{iconfont-css-prefix}-close,
-  &&-card > &-bar &-tab:hover .@{iconfont-css-prefix}-close {
-    width: 16px;
-    transform: translateZ(0);
+  &&-card &-card-bar &-tab:hover .@{iconfont-css-prefix}-close {
+    opacity: 1;
   }
 
   &-extra-content {
-    float: right;
-    line-height: 32px;
+    line-height: @tabs-title-font-size * @line-height-base + extract(@tabs-horizontal-padding, 1) *
+      2;
 
     .@{tab-prefix-cls}-new-tab {
+      position: relative;
       width: 20px;
       height: 20px;
+      color: @text-color;
+      font-size: 12px;
       line-height: 20px;
       text-align: center;
-      cursor: pointer;
+      border: @border-width-base @border-style-base @border-color-split;
       border-radius: @border-radius-base;
-      border: @border-width-base @border-style-base @border-color-base;
-      font-size: @font-size-base;
-      .iconfont-size-under-12px(10px);
-      color: @text-color-secondary;
-      transition: color 0.3s ease;
+      cursor: pointer;
+      transition: all 0.3s;
       &:hover {
-        color: #404040;
+        color: @tabs-card-active-color;
+        border-color: @tabs-card-active-color;
+      }
+      svg {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        margin: auto;
       }
     }
   }
 
+  // https://github.com/ant-design/ant-design/issues/17865
+  &&-large &-extra-content {
+    line-height: @tabs-title-font-size-lg * @line-height-base +
+      extract(@tabs-horizontal-padding-lg, 1) * 2;
+  }
+
+  // https://github.com/ant-design/ant-design/issues/17865
+  &&-small &-extra-content {
+    line-height: @tabs-title-font-size-sm * @line-height-base +
+      extract(@tabs-horizontal-padding-sm, 1) * 2;
+  }
+
+  // https://github.com/ant-design/ant-design/issues/17865
+  &&-card &-extra-content {
+    line-height: @tabs-card-height;
+  }
+
   // https://github.com/ant-design/ant-design/issues/4669
-  &-vertical&-card > .@{tab-prefix-cls}-bar {
+  &-vertical&-card &-card-bar&-left-bar,
+  &-vertical&-card &-card-bar&-right-bar {
     .@{tab-prefix-cls}-nav-container {
-      height: auto;
+      height: 100%;
     }
     .@{tab-prefix-cls}-tab {
-      border-bottom: @border-width-base @border-style-base @border-color-base;
-      margin-bottom: 8px;
+      margin-bottom: @margin-sm;
+      border-bottom: @border-width-base @border-style-base @border-color-split;
       &-active {
         padding-bottom: 4px;
       }
       &:last-child {
-        margin-bottom: 8px;
+        margin-bottom: @margin-sm;
       }
+    }
+    .@{tab-prefix-cls}-new-tab {
+      width: 90%;
     }
   }
 
-  &-vertical&-card&-left > .@{tab-prefix-cls}-bar {
+  &-vertical&-card&-left &-card-bar&-left-bar {
     .@{tab-prefix-cls}-nav-wrap {
       margin-right: 0;
     }
     .@{tab-prefix-cls}-tab {
+      margin-right: 1px;
       border-right: 0;
       border-radius: @border-radius-base 0 0 @border-radius-base;
-      margin-right: 1px;
       &-active {
         margin-right: -1px;
-        padding-right: 18px;
+        padding-right: @padding-md + 2px;
       }
     }
   }
 
-  &-vertical&-card&-right > .@{tab-prefix-cls}-bar {
+  &-vertical&-card&-right &-card-bar&-right-bar {
     .@{tab-prefix-cls}-nav-wrap {
       margin-left: 0;
     }
     .@{tab-prefix-cls}-tab {
+      margin-left: 1px;
       border-left: 0;
       border-radius: 0 @border-radius-base @border-radius-base 0;
-      margin-left: 1px;
       &-active {
         margin-left: -1px;
-        padding-left: 18px;
+        padding-left: @padding-md + 2px;
       }
     }
+  }
+
+  // https://github.com/ant-design/ant-design/issues/9104
+  & &-card-bar&-bottom-bar &-tab {
+    height: auto;
+    border-top-color: @border-color-split;
+    border-bottom: @border-width-base @border-style-base @border-color-split;
+    border-radius: 0 0 @border-radius-base @border-radius-base;
+  }
+
+  & &-card-bar&-bottom-bar &-tab-active {
+    color: @primary-color;
+    border-top-color: @component-background;
   }
 }

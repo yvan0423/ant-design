@@ -11,40 +11,49 @@ title:
 
 ## en-US
 
-Basic modal dialog.
+Basic modal.
 
-````jsx
+```jsx
 import { Modal, Button } from 'antd';
 
 class App extends React.Component {
-  state = { visible: false }
+  state = { visible: false };
+
   showModal = () => {
     this.setState({
       visible: true,
     });
-  }
-  handleOk = (e) => {
+  };
+
+  handleOk = e => {
     console.log(e);
     this.setState({
       visible: false,
     });
-  }
-  handleCancel = (e) => {
+  };
+
+  handleCancel = e => {
     console.log(e);
     this.setState({
       visible: false,
     });
-  }
+  };
+
   render() {
     return (
       <div>
-        <Button type="primary" onClick={this.showModal}>Open a modal dialog</Button>
-        <Modal title="Basic Modal" visible={this.state.visible}
-          onOk={this.handleOk} onCancel={this.handleCancel}
+        <Button type="primary" onClick={this.showModal}>
+          Open Modal
+        </Button>
+        <Modal
+          title="Basic Modal"
+          visible={this.state.visible}
+          onOk={this.handleOk}
+          onCancel={this.handleCancel}
         >
-          <p>some contents...</p>
-          <p>some contents...</p>
-          <p>some contents...</p>
+          <p>Some contents...</p>
+          <p>Some contents...</p>
+          <p>Some contents...</p>
         </Modal>
       </div>
     );
@@ -52,4 +61,10 @@ class App extends React.Component {
 }
 
 ReactDOM.render(<App />, mountNode);
-````
+```
+
+<style>
+.ant-modal p {
+  margin: 0;
+}
+</style>
